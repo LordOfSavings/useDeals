@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import { resolve } from "path";
 
 function replacePagination(): Plugin {
@@ -20,5 +21,5 @@ function replacePagination(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), replacePagination()],
+  plugins: [react(), tailwindcss(), replacePagination()],
 });

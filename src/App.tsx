@@ -2,57 +2,97 @@ import React, { useState } from "react";
 import { useDeals, type ListingType } from "./useDeals.js";
 import type { ModelSortDirection, Deal } from "./types.js";
 
-const LISTING_OPTIONS: { value: ListingType; label: string }[] = [
-  { value: "recent", label: "Recent" },
-  { value: "top", label: "Top Deals" },
-  { value: "lightning", label: "Lightning" },
+const LISTING_OPTIONS: { value: ListingType; label: string; icon: string }[] = [
+  { value: "recent", label: "Recent", icon: "🕐" },
+  { value: "top", label: "Top Deals", icon: "🔥" },
+  { value: "lightning", label: "Lightning", icon: "⚡" },
 ];
 
-function DealCard({ deal }: { deal: Deal }) {
-  const discount = deal.prev_price > 0
-    ? Math.round(((deal.prev_price - deal.price) / deal.prev_price) * 100)
-    : 0;
+function DealCard({ deal, index }: { deal: Deal; index: number }) {
+  const discount =
+    deal.prev_price > 0
+      ? Math.round(((deal.prev_price - deal.price) / deal.prev_price) * 100)
+      : 0;
 
   return (
-    <div style={styles.card}>
-      <div style={{
-        ...styles.cardImg,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 11,
-        color: "#999",
-        textAlign: "center" as const,
-      }}>
-        {deal.forum_type?.charAt(0) || "D"}
+    <div
+      className="animate-fade-in group bg-white rounded-xl border border-gray-100 p-4 flex gap-4 hover:shadow-lg hover:border-indigo-200 transition-all duration-300 hover:-translate-y-0.5"
+      style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
+    >
+      <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+        {deal.is_lightning_deal ? "⚡" : deal.is_top_deal ? "🔥" : "🏷️"}
       </div>
-      <div style={styles.cardBody}>
-        <h3 style={styles.cardTitle}>{deal.title}</h3>
-        <div style={styles.priceRow}>
-          <span style={styles.price}>${deal.price.toFixed(2)}</span>
+      <div className="flex-1 min-w-0">
+        <h3 className="text-sm md:text-base font-semibold text-gray-800 line-clamp-2 leading-tight mb-1">
+          {deal.title}
+        </h3>
+        <p className="text-[10px] text-gray-400 font-mono mb-1.5 truncate">
+          {deal.id}
+        </p>
+        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+          <span className="text-lg md:text-xl font-bold text-red-500">
+            ${deal.price.toFixed(2)}
+          </span>
           {deal.prev_price > deal.price && (
-            <span style={styles.prevPrice}>${deal.prev_price.toFixed(2)}</span>
+            <span className="text-xs md:text-sm line-through text-gray-400">
+              ${deal.prev_price.toFixed(2)}
+            </span>
           )}
           {discount > 0 && (
-            <span style={styles.discount}>-{discount}%</span>
+            <span className="text-xs font-bold text-white bg-emerald-500 px-1.5 py-0.5 rounded">
+              -{discount}%
+            </span>
           )}
         </div>
-        <div style={styles.meta}>
-          <span>{deal.forum_type}</span>
-          <span style={{ margin: "0 8px" }}>|</span>
-          <span>{deal.dealer_type}</span>
+        <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500">
+          {deal.forum_type && (
+            <span className="bg-gray-100 px-2 py-0.5 rounded">
+              {deal.forum_type}
+            </span>
+          )}
+          {deal.dealer_type && (
+            <span className="bg-gray-100 px-2 py-0.5 rounded">
+              {deal.dealer_type}
+            </span>
+          )}
           {deal.has_coupon && deal.coupon && (
-            <span style={styles.couponBadge}>Coupon: {deal.coupon}</span>
+            <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">
+              🎟️ {deal.coupon}
+            </span>
           )}
           {deal.has_promotional_code && deal.promotional_code && (
-            <span style={styles.promoBadge}>Code: {deal.promotional_code}</span>
+            <span className="bg-sky-100 text-sky-700 px-2 py-0.5 rounded font-medium">
+              📋 {deal.promotional_code}
+            </span>
           )}
         </div>
-        <div style={styles.votes}>
+        <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
           <span>👍 {deal.vote}</span>
-          <span style={{ marginLeft: 12 }}>👎 {deal.down_vote}</span>
+          <span>👎 {deal.down_vote}</span>
+          {deal.free_shipping && (
+            <span className="text-emerald-600 font-medium">🚚 Free Ship</span>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function StatBadge({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string | number;
+  color: string;
+}) {
+  return (
+    <div className={`flex flex-col items-center px-3 py-2 rounded-lg ${color}`}>
+      <span className="text-lg md:text-xl font-bold">{value}</span>
+      <span className="text-[10px] md:text-xs uppercase tracking-wide opacity-70">
+        {label}
+      </span>
     </div>
   );
 }
@@ -73,211 +113,229 @@ export default function App() {
     error,
   } = useDeals({ listingType, sortDirection, pageSize, exhaustAll });
 
+  const uniqueIds = new Set(deals.map((d) => d.id)).size;
+
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
-        <h1 style={styles.title}>useDeals Demo</h1>
-        <p style={styles.subtitle}>
-          TanStack Query + Pagination + Consistent Page Buffering
-        </p>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
+        {/* Header */}
+        <header className="text-center mb-8 animate-slide-down">
+          <h1 className="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            useDeals Demo
+          </h1>
+          <p className="text-sm md:text-base text-gray-500 mt-1">
+            TanStack Query + Infinite Pagination + Consistent Page Buffering
+          </p>
+        </header>
 
-      <div style={styles.controls}>
-        <div style={styles.controlGroup}>
-          <label style={styles.label}>Listing Type</label>
-          <div style={styles.btnGroup}>
-            {LISTING_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setListingType(opt.value)}
-                style={{
-                  ...styles.btn,
-                  ...(listingType === opt.value ? styles.btnActive : {}),
-                }}
-              >
-                {opt.label}
-              </button>
-            ))}
+        {/* Test Cases Demonstrated */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 mb-6 animate-fade-in">
+          <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            Test Cases Demonstrated
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3">
+              <span className="font-semibold text-indigo-600">1. Query Routing</span>
+              <p className="text-gray-500 mt-0.5">
+                Switch listing type — each calls a different API function
+              </p>
+            </div>
+            <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3">
+              <span className="font-semibold text-indigo-600">2. Sort Reset</span>
+              <p className="text-gray-500 mt-0.5">
+                Change sort direction or listing type — data resets from scratch
+              </p>
+            </div>
+            <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3">
+              <span className="font-semibold text-indigo-600">3. Exhaust All (Stretch A)</span>
+              <p className="text-gray-500 mt-0.5">
+                Toggle "Load all 1000" — auto-paginates until all data loaded
+              </p>
+            </div>
+            <div className="bg-indigo-50/50 border border-indigo-100 rounded-lg p-3">
+              <span className="font-semibold text-indigo-600">4. Consistent Pages (Stretch B)</span>
+              <p className="text-gray-500 mt-0.5">
+                Click "Load Next" — always get exactly pageSize items per batch
+              </p>
+            </div>
           </div>
         </div>
 
-        <div style={styles.controlGroup}>
-          <label style={styles.label}>Sort Direction</label>
-          <div style={styles.btnGroup}>
-            {(["ASC", "DESC"] as const).map((dir) => (
-              <button
-                key={dir}
-                onClick={() => setSortDirection(dir)}
-                style={{
-                  ...styles.btn,
-                  ...(sortDirection === dir ? styles.btnActive : {}),
-                }}
+        {/* Controls Panel */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 mb-6 animate-fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Test 1: Query Routing */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                Query Routing
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {LISTING_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setListingType(opt.value)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                      listingType === opt.value
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-105"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {opt.icon} {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Test 2: Sort Reset */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                Sort Direction
+              </label>
+              <div className="flex gap-1.5">
+                {(["ASC", "DESC"] as const).map((dir) => (
+                  <button
+                    key={dir}
+                    onClick={() => setSortDirection(dir)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer ${
+                      sortDirection === dir
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-200 scale-105"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {dir === "ASC" ? "ASC" : "DESC"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stretch B: Consistent Page Size */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                Page Size
+              </label>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="w-full px-3 py-1.5 rounded-lg border border-gray-200 text-sm bg-white focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 outline-none transition-all"
               >
-                {dir === "ASC" ? "↑ ASC" : "↓ DESC"}
-              </button>
-            ))}
+                {[10, 20, 30, 50].map((s) => (
+                  <option key={s} value={s}>
+                    {s} per page
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Stretch A: Exhaust All */}
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
+                Exhaust All
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer bg-gray-50 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={exhaustAll}
+                  onChange={(e) => setExhaustAll(e.target.checked)}
+                  className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                />
+                <span className="text-xs font-medium text-gray-600">
+                  Load all 1000
+                </span>
+              </label>
+            </div>
           </div>
         </div>
 
-        <div style={styles.controlGroup}>
-          <label style={styles.label}>Page Size</label>
-          <select
+        {/* Stats Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 animate-fade-in">
+          <StatBadge
+            label="Loaded"
+            value={deals.length}
+            color="bg-indigo-50 text-indigo-700"
+          />
+          <StatBadge
+            label="Unique IDs"
+            value={uniqueIds}
+            color="bg-emerald-50 text-emerald-700"
+          />
+          <StatBadge
+            label="Page Size"
             value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-            style={styles.select}
-          >
-            {[10, 20, 50].map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
+            color="bg-amber-50 text-amber-700"
+          />
+          <StatBadge
+            label="Status"
+            value={
+              isLoading
+                ? "Loading"
+                : isExhausted
+                  ? "Done"
+                  : isFetchingMore
+                    ? "Fetching"
+                    : "Ready"
+            }
+            color={
+              isExhausted
+                ? "bg-emerald-50 text-emerald-700"
+                : isLoading || isFetchingMore
+                  ? "bg-sky-50 text-sky-700"
+                  : "bg-gray-50 text-gray-700"
+            }
+          />
         </div>
 
-        <div style={styles.controlGroup}>
-          <label style={styles.checkLabel}>
-            <input
-              type="checkbox"
-              checked={exhaustAll}
-              onChange={(e) => setExhaustAll(e.target.checked)}
-            />
-            <span style={{ marginLeft: 6 }}>Exhaust All (load 1000)</span>
-          </label>
+        {/* Loading indicator */}
+        {(isLoading || isFetchingMore) && (
+          <div className="flex items-center justify-center gap-2 py-3 mb-4 animate-slide-down">
+            <div className="flex gap-1">
+              <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse-dot" style={{ animationDelay: "0ms" }} />
+              <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse-dot" style={{ animationDelay: "300ms" }} />
+              <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse-dot" style={{ animationDelay: "600ms" }} />
+            </div>
+            <span className="text-sm text-gray-500">
+              {isLoading ? "Loading deals..." : "Fetching more..."}
+            </span>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-6 animate-slide-down">
+            <span className="font-medium">Error:</span> {error.message}
+          </div>
+        )}
+
+        {/* Deal List */}
+        <div className="space-y-3">
+          {deals.map((deal, i) => (
+            <DealCard key={deal.id} deal={deal} index={i} />
+          ))}
         </div>
+
+        {/* Load More */}
+        {!isLoading && hasNextPage && !exhaustAll && (
+          <div className="text-center py-8 animate-fade-in">
+            <button
+              onClick={fetchNextPage}
+              disabled={isFetchingMore}
+              className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-300 text-white font-semibold rounded-xl shadow-lg shadow-indigo-200 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isFetchingMore ? "Loading..." : `Load Next ${pageSize}`}
+            </button>
+          </div>
+        )}
+
+        {/* Exhausted */}
+        {isExhausted && deals.length > 0 && (
+          <div className="text-center py-8 animate-fade-in">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-full px-5 py-2 text-sm font-medium">
+              <span>✓</span>
+              All {deals.length} deals loaded ({uniqueIds} unique)
+            </div>
+          </div>
+        )}
+
       </div>
-
-      <div style={styles.statusBar}>
-        <span>
-          Loaded: <strong>{deals.length}</strong> deals
-        </span>
-        {isLoading && <span style={styles.badge}>Loading...</span>}
-        {isFetchingMore && <span style={styles.badgeBlue}>Fetching more...</span>}
-        {isExhausted && <span style={styles.badgeGreen}>All loaded</span>}
-        {error && <span style={styles.badgeRed}>Error: {error.message}</span>}
-      </div>
-
-      <div style={styles.dealList}>
-        {deals.map((deal) => (
-          <DealCard key={deal.id} deal={deal} />
-        ))}
-      </div>
-
-      {!isLoading && hasNextPage && !exhaustAll && (
-        <div style={styles.loadMoreWrap}>
-          <button
-            onClick={fetchNextPage}
-            disabled={isFetchingMore}
-            style={styles.loadMoreBtn}
-          >
-            {isFetchingMore ? "Loading..." : "Load More"}
-          </button>
-        </div>
-      )}
-
-      {isExhausted && deals.length > 0 && (
-        <p style={styles.endMessage}>
-          All {deals.length} deals loaded.
-        </p>
-      )}
     </div>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    maxWidth: 900,
-    margin: "0 auto",
-    padding: "16px 20px",
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    color: "#1a1a2e",
-    background: "#f8f9fa",
-    minHeight: "100vh",
-  },
-  header: { textAlign: "center", marginBottom: 24 },
-  title: { fontSize: 28, fontWeight: 700, margin: 0 },
-  subtitle: { color: "#666", fontSize: 14, margin: "4px 0 0" },
-  controls: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 16,
-    alignItems: "flex-end",
-    background: "#fff",
-    padding: 16,
-    borderRadius: 12,
-    boxShadow: "0 1px 4px rgba(0,0,0,.08)",
-    marginBottom: 16,
-  },
-  controlGroup: { display: "flex", flexDirection: "column", gap: 4 },
-  label: { fontSize: 12, fontWeight: 600, color: "#888", textTransform: "uppercase" as const },
-  btnGroup: { display: "flex", gap: 4 },
-  btn: {
-    padding: "6px 14px",
-    borderWidth: 1,
-    borderStyle: "solid",
-    borderColor: "#dee2e6",
-    borderRadius: 6,
-    background: "#fff",
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 500,
-    transition: "all .15s",
-    color: "#1a1a2e",
-  },
-  btnActive: {
-    background: "#4361ee",
-    color: "#fff",
-    borderColor: "#4361ee",
-  },
-  select: {
-    padding: "6px 10px",
-    border: "1px solid #dee2e6",
-    borderRadius: 6,
-    fontSize: 13,
-  },
-  checkLabel: { display: "flex", alignItems: "center", fontSize: 13, cursor: "pointer" },
-  statusBar: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "10px 16px",
-    background: "#fff",
-    borderRadius: 8,
-    marginBottom: 16,
-    fontSize: 14,
-  },
-  badge: { padding: "2px 8px", borderRadius: 4, background: "#ffc107", fontSize: 12, fontWeight: 600 },
-  badgeBlue: { padding: "2px 8px", borderRadius: 4, background: "#4cc9f0", fontSize: 12, fontWeight: 600 },
-  badgeGreen: { padding: "2px 8px", borderRadius: 4, background: "#52b788", color: "#fff", fontSize: 12, fontWeight: 600 },
-  badgeRed: { padding: "2px 8px", borderRadius: 4, background: "#e63946", color: "#fff", fontSize: 12, fontWeight: 600 },
-  dealList: { display: "flex", flexDirection: "column", gap: 10 },
-  card: {
-    display: "flex",
-    gap: 16,
-    background: "#fff",
-    padding: 16,
-    borderRadius: 10,
-    boxShadow: "0 1px 3px rgba(0,0,0,.06)",
-    transition: "box-shadow .2s",
-  },
-  cardImg: { width: 80, height: 80, objectFit: "cover", borderRadius: 8, flexShrink: 0, background: "#eee" },
-  cardBody: { flex: 1, minWidth: 0 },
-  cardTitle: { fontSize: 15, fontWeight: 600, margin: "0 0 6px", lineHeight: 1.3 },
-  priceRow: { display: "flex", alignItems: "center", gap: 8, marginBottom: 6 },
-  price: { fontSize: 18, fontWeight: 700, color: "#e63946" },
-  prevPrice: { fontSize: 14, textDecoration: "line-through", color: "#999" },
-  discount: { fontSize: 12, fontWeight: 600, color: "#fff", background: "#52b788", padding: "1px 6px", borderRadius: 4 },
-  meta: { fontSize: 12, color: "#666", display: "flex", flexWrap: "wrap", alignItems: "center", gap: 4, marginBottom: 4 },
-  couponBadge: { fontSize: 11, background: "#fff3cd", padding: "1px 6px", borderRadius: 3, fontWeight: 600 },
-  promoBadge: { fontSize: 11, background: "#d1ecf1", padding: "1px 6px", borderRadius: 3, fontWeight: 600 },
-  votes: { fontSize: 12, color: "#888" },
-  loadMoreWrap: { textAlign: "center", padding: "20px 0" },
-  loadMoreBtn: {
-    padding: "10px 32px",
-    background: "#4361ee",
-    color: "#fff",
-    border: "none",
-    borderRadius: 8,
-    fontSize: 15,
-    fontWeight: 600,
-    cursor: "pointer",
-  },
-  endMessage: { textAlign: "center", color: "#888", fontSize: 14, padding: "16px 0" },
-};
