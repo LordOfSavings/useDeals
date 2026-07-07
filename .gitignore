@@ -5,6 +5,7 @@ dist
 .env
 .env.*
 docs
+package-lock.json
 
 # Logs
 *.log
