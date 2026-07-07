@@ -174,5 +174,5 @@ useDeals/
 - If you change `sortDirection` while holding an old `nextToken`, the mock throws. Your hook should reset before that happens.
 - Core requirement: working hook with listing type selection, sort direction, and basic pagination.
 - Stretch goals: full exhaustion and consistent page sizes, with tests.
-- .Use [TanStack Query](https://tanstack.com/query/latest)
+- Use [TanStack Query.](https://tanstack.com/query/latest)
 
