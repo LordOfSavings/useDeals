@@ -1,0 +1,25 @@
+node_modules
+dist
+.vite
+*.local
+.env
+.env.*
+docs
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode
+*.swp
+*.swo
+.vercel
