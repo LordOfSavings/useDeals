@@ -72,6 +72,9 @@ function DealCard({ deal, index }: { deal: Deal; index: number }) {
           {deal.free_shipping && (
             <span className="text-emerald-600 font-medium">🚚 Free Ship</span>
           )}
+          <span className="ml-auto" title={`Created: ${deal.createdAt}\nUpdated: ${deal.updatedAt}`}>
+            📅 {new Date(deal.createdAt).toLocaleDateString()} · ✏️ {new Date(deal.updatedAt).toLocaleDateString()}
+          </span>
         </div>
       </div>
     </div>
